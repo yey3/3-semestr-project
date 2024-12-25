@@ -4,8 +4,27 @@
 #include <iomanip>
 #include "Matrix.h"
 #include <fstream>
+#include <iterator>
 
 using namespace std;
+
+int correct_file_input(int defaultt, ifstream &fin)
+{
+	int res = defaultt;
+	string s_in;
+	if (fin.eof())
+	{
+		cout << "В файле недостаточно информации! Недостающие значения будут заменены на " << defaultt << endl;
+		return res;
+	}
+	fin >> s_in;
+	try
+	{
+		res = stoi(s_in);
+	}
+	catch (...) { cout << "В файле записано некорректное значение! Оно будет заменено на " << defaultt << endl; }
+	return res;
+}
 
 Matrix::Matrix(int rows, int cols) : rows(rows), cols(cols) {
 	data = new int* [rows];
@@ -33,20 +52,39 @@ void Matrix::readFromInput() {
 }
 
 void Matrix::readFromFile(const std::string& filename) {
-	ifstream in(filename);
-	if (in) {
-		in >> rows >> cols;
-		clear();
-		data = new int* [rows];
-		for (int i = 0; i < rows; ++i) {
-			data[i] = new int[cols];
-			for (int j = 0; j < cols; ++j) {
-				in >> data[i][j];
+	clear();
+	ifstream fin(filename);
+	if (fin) {
+		rows = correct_file_input(1, fin);
+		cols = correct_file_input(1, fin);
+		if (rows > 0 && cols > 0)
+		{
+			clear();
+			data = new int* [rows];
+			for (int i = 0; i < rows; i++)
+			{
+				data[i] = new int[cols];
+				for (int j = 0; j < cols; j++)
+					data[i][j] = 0;
+			}
+			for (int i = 0; i < rows; ++i) {
+				for (int j = 0; j < cols; ++j) {
+					data[i][j] = correct_file_input(0, fin);
+				}
 			}
 		}
+		else
+		{
+			cout << "В файле записаны некорректные значения! Будет создана нулевая матрица 1х1" << endl;
+			*this = *(zeroMatrix(1, 1));
+		}
 	}
-	else cout << "Не удалось открыть файл!" << endl;
-	in.close();
+	else
+	{
+		cout << "Не удалось открыть файл! Будет создана нулевая матрица 1х1" << endl;
+		*this = *(zeroMatrix(1, 1));
+	}
+	fin.close();
 }
 
 Matrix* Matrix::zeroMatrix(int rows, int cols) {
@@ -150,4 +188,3 @@ void Matrix::clear() {
 }
 
 Matrix::~Matrix() { clear(); }
-
